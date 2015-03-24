@@ -26,6 +26,14 @@ using boost::numeric::ublas::vector;
  */
 class USML_DECLSPEC seq_data : public seq_vector {
 
+    //**************************************************
+    // type definisions
+
+    typedef seq_data self_type;
+public:
+    typedef const vector_reference<const self_type> const_closure_type;
+    typedef vector_reference<self_type> closure_type;
+
 protected:
 
     /** index number from the last search */
@@ -44,52 +52,12 @@ protected:
     // private functions
 
     /**
-     * Initialize sequence from a uBLAS vector.
-     * Ensures that the sequence is a monotonic sequence.
      *
-     * @param  data  Set of data elements to use.
-     * @param  size  Number of data elements.
+     * @param  data		          Set of data elements to use.
+     * @param  size               Number of elements in this set.
      * @throws invalid_argument   If series not monotonic
      */
     void init( const double* data, size_t size ) {
-        _data.resize(size) ;
-        _increment.resize(size) ;
-        _max_index = size-1;
-        _index = 0;
-        _value = data[0];
-        _sign = 1.0;
-        if (_max_index == 0) {
-            _data[0] = data[0];
-            _increment[0] = 0.0;
-        } else if (_max_index > 0) {
-
-            // process first element
-
-            value_type left = data[1] - data[0];
-            if (left < 0) {
-                _sign = -1.0;
-            }
-            _data[0] = data[0];
-            _increment[0] = left;
-
-            // process middle elements
-
-            for ( size_type n = 1; n < _max_index; ++n ) {
-                value_type right = data[n+1] - data[n];
-                if (left * right <= 0) { // detect change of sign
-                    throw std::invalid_argument("series not monotonic");
-                }
-                left = right;
-                _data[n] = data[n];
-                _increment[n] = left;
-            }
-
-            // process last element
-
-            _data[ _max_index ] = data[ _max_index ];
-            _increment[ _max_index ] = left;
-        }
-        _index_data = _data[_index] * _sign;
     }
 
     //**************************************************
@@ -101,7 +69,7 @@ public:
      * Search for a value in this sequence. If the value is outside of the
      * legal range, the index for the nearest endpoint will be returned,
      * unless the nearest endpoint is that last index, in which the second
-     * to last index will be returned. This is to guarantee that there is
+     * to last index will be returned. This is to garuntee that there is
      * always an index to the right of the returned index.
      *
      * @param   value       Value of the element to find.
@@ -130,7 +98,7 @@ public:
             // then new point is less than, or equal to, the search value.
 
             for (difference_type n = _index - 1; n >= 0 && _index_data > value; --n) {
-                _index_data = _data[--_index] * _sign;
+                _index_data = _data(--_index) * _sign;
             }
 
             // search forwards (toward the back)?
@@ -142,19 +110,20 @@ public:
 
             difference_type N = size() - 2;
             for (difference_type n = _index + 1; n <= N && _index_data < value; ++n) {
-                _index_data = _data[++_index] * _sign;
+                _index_data = _data(++_index) * _sign;
             }
 
             // If new point is greater than the search value,
             // we've gone too far and we need to back up by one.
 
             if (_index_data > value && _index > 0) {
-                _index_data = _data[--_index] * _sign;
+                _index_data = _data(--_index) * _sign;
             }
 
         }
         return _index;
     }
+
 
     //***************************************************************
     // constructors and destructors
@@ -175,28 +144,94 @@ public:
      * Construct sequence from a standard C array.
      * Ensures that the sequence is a monotonic sequence.
      *
-     * @param  data		          Set of data elements to use.
+     * @param  data		  Set of data elements to use.
      * @param  size               Number of elements in data.
      * @throws invalid_argument   If series not monotonic
      */
     seq_data( const double* data, size_t size ) : seq_vector( size ) {
-        init( data, size );
+        _index = 0 ;
+        _value = data[0] ;
+        _sign = 1.0;
+        _data[0] = _value;
+        if (_max_index == 0) {
+            _increment[0] = 0.0 ;
+        }
+        else if (_max_index > 0) {
+
+            // process first element
+
+            value_type left = data[1] - data[0] ;
+            if (left < 0) {
+                _sign = -1.0;
+            }
+            _increment[0] = left;
+
+            // process middle elements
+
+            for ( size_type n = 1; n < _max_index; ++n ) {
+                value_type right = data[n+1] - data[n] ;
+                if (left * right <= 0) { // detect change of sign
+                    throw std::invalid_argument("series not monotonic");
+                }
+                left = right;
+                _data[n] = data[n];
+                _increment[n] = left;
+            }
+
+            // process last element
+
+            _data[ _max_index ] = data[ _max_index ];
+            _increment[ _max_index ] = left;
+        }
+        _index_data = _data[_index] * _sign;
     }
 
     /**
      * Construct sequence from a uBLAS vector.
      * Ensures that the sequence is a monotonic sequence.
      *
-     * @param  data		          Set of data elements to use.
+     * @param  data		  Set of data elements to use.
      * @throws invalid_argument   If series not monotonic
      */
-    template<class T, class A> seq_data( const vector<T,A> &data ) :
-            seq_vector( data.size() ) {
-        const size_t N = data.size();
-        double* buffer = new double[N];
-        std::copy( data.begin(), data.end(), buffer );
-        init( buffer, N );
-        delete[] buffer ;
+    template<class T, class A> seq_data( const vector<T,A> &data )
+        : seq_vector( data.size() )
+    {
+        _index = 0 ;
+        _value = data[0] ;
+        _sign = 1.0;
+        if (_max_index == 0) {
+            _data[0] = data[0] ;
+            _increment[0] = 0.0 ;
+        }
+        else if (_max_index > 0) {
+
+            // process first element
+
+            value_type left = data[1] - data[0] ;
+            if (left < 0) {
+                _sign = -1.0;
+            }
+            _data[0] = data[0] ;
+            _increment[0] = left;
+
+            // process middle elements
+
+            for ( size_type n = 1; n < _max_index; ++n ) {
+                value_type right = data[n+1] - data[n] ;
+                if (left * right <= 0) { // detect change of sign
+                    throw std::invalid_argument("series not monotonic");
+                }
+                left = right;
+                _data[n] = data[n];
+                _increment[n] = left;
+            }
+
+            // process last element
+
+            _data[ _max_index ] = data[ _max_index ];
+            _increment[ _max_index ] = left;
+        }
+        _index_data = _data[_index] * _sign;
     }
 
     /**
