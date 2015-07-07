@@ -28,6 +28,8 @@
 	add_executable( dead_reckon_test studies/dead_reckoning/dead_reckon_test.cc )
     target_link_libraries( dead_reckon_test usml )
     
+    add_executable( test_move_semantics studies/test_move_semantics/test_move_semantics.cpp )
+    
     set_property(
         TARGET cmp_speed ray_speed eigenray_extra_test pedersen_test 
         malta_movie malta_rays reverb_analytic_test dead_reckon_test
