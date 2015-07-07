@@ -5,7 +5,9 @@
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
+#ifndef BOOST_UBLAS_MOVE_SEMANTICS
 #define BOOST_UBLAS_MOVE_SEMANTICS
+#endif
 #include <boost/numeric/ublas/vector.hpp>
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/io.hpp>

@@ -20,17 +20,18 @@ if( MSVC )
     add_definitions( -MP )          # multi-processor compilation
     add_definitions( -D_USE_MATH_DEFINES ) # symbols like M_PI
     add_definitions(                # quiet some harmless warning
-	   -D_WIN32_WINNT=0x0501
+	-D_WIN32_WINNT=0x0501
         -D_CRT_SECURE_NO_WARNINGS
         -wd4244 -wd4996 -wd4018 -wd4251 )
     add_definitions(                # workaround for error in
-        -wd4005 )			    # boost::geometry 1.58
+        -wd4005 )                   # boost::geometry 1.58
     if ( BUILD_SHARED_LIBS )
         add_definitions( -DUSML_DYN_LINK )
     endif ( BUILD_SHARED_LIBS )
     if ( USML_PEDANTIC )
         add_definitions( -WX )
     endif ( USML_PEDANTIC )
+    set ( CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -DBOOST_UBLAS_MOVE_SEMANTICS" )
 
 ######################################################################
 # GNU C++ options
@@ -47,7 +48,7 @@ else( CMAKE_COMPILER_IS_GNUCXX )
     if ( ( ${CMAKE_BUILD_TYPE} MATCHES Debug ) ) # min optimizations
 	add_definitions( -g -O0 )	
     else()                              	# max optimizations
-	add_definitions( -g -ffast-math -fno-finite-math-only )
+	add_definitions( -g -ffast-math -fno-finite-math-only -DBOOST_UBLAS_MOVE_SEMANTICS )
     endif()
     if ( USML_PEDANTIC )                	# standards compliance
         add_definitions( -std=c++98 -pedantic -Wall -Werror
@@ -111,7 +112,9 @@ include_directories( ${Boost_INCLUDE_DIR} )
 # 1397 through 1407 (just above it).  Doing so allows further overloading of
 # operator/() for other types.  Same idea applies to matrix_expression.hpp.
 
-add_definitions( -DBOOST_UBLAS_CHECK_DIVISION_TYPE )
+if ( Boost_VERSION VERSION_LESS 1.58 )
+    add_definitions( -DBOOST_UBLAS_CHECK_DIVISION_TYPE )
+endif ()
 
 ######################################################################
 # NetCDF data access library
